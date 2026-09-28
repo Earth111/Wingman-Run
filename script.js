@@ -29,7 +29,7 @@ let boxImg;
 let boxWidth = 60;
 let boxHeight = 80;
 let boxY = 438;
-let skyBoxY = 360;
+let skyBoxY = 395;
 let skyBoxImg;
 
 let boxesArray = [];
@@ -40,6 +40,7 @@ let gravity = 0.35;
 let isCrouch = false;
 let isTransformed = false;
 let victory = false;
+let gameOverPlayed = false;
 
 
 
@@ -61,22 +62,18 @@ window.onload = function() {
    
     requestAnimationFrame(update);
 
-    document.addEventListener("keydown",function(e) {
+    document.addEventListener("keydown",function() {
         if(!musicStarted) {
          backgroundMusic.loop = true;
          backgroundMusic.volume = 0.03;
-         backgroundMusic.play(); 
+         backgroundMusic.play().catch(() => {});
 
          musicStarted = true;
-        }
-        if(e.code == "Space") {
-            jumpSound.currentTime = 0; 
-            jumpSound.volume = 0.1;
-            jumpSound.play();
         }
     });
     document.addEventListener("keydown", function(e) {
     if(e.code == "ArrowDown") {
+        e.preventDefault();
         isCrouch = true;
     }
 });
@@ -88,6 +85,13 @@ document.addEventListener("keyup", function(e) {
 });
 
     document.addEventListener("keydown", movePlayer);
+
+    const jumpButton = document.getElementById("jump-button");
+    const crouchButton = document.getElementById("crouch-button");
+    jumpButton.addEventListener("pointerdown", jump);
+    crouchButton.addEventListener("pointerdown", startCrouch);
+    crouchButton.addEventListener("pointerup", stopCrouch);
+    crouchButton.addEventListener("pointerleave", stopCrouch);
 
     boxImg = new Image();
     boxImg.src = "mosh.png";
@@ -113,7 +117,7 @@ function update() {
     context.clearRect(0,0,board.width,board.height);
     velocityY += gravity;
 
-    player.y = Math.min(player.y + velocityY,playery);
+    player.y = Math.min(player.y + velocityY, boardHeight - player.height);
     let drawHeight = isCrouch ? player.height * 0.7 : player.height;
 
 let drawY = player.y + (player.height - drawHeight) - 0.2;
@@ -123,7 +127,7 @@ if(Math.floor(score / 200)% 2 == 1){
     player.width = 110;
     player.height = 102;
 
-    boxspeed = -20;
+    boxspeed = -(12 + Math.min(score / 200, 4) + 3);
     if(!isTransformed) {
         transformSound.currentTime = 0;
         transformSound.volume = 0.1;
@@ -141,7 +145,7 @@ else {
     playerImg = normalImg;
     player.width = 85;
     player.height = 85;
-    boxspeed = -15;
+    boxspeed = -(12 + Math.min(score / 200, 4));
 }
 
 context.drawImage(
@@ -152,23 +156,23 @@ context.drawImage(
     drawHeight
 );
 
-    for(let i = 0; i < boxesArray.length; i++) {
+    for(let i = boxesArray.length - 1; i >= 0; i--) {
         let box = boxesArray[i];
         box.x += boxspeed;
         context.drawImage(box.img,box.x,box.y,box.width,box.height);
         
         let playerObj = {
-    x: player.x,
-    y: isCrouch ? player.y + player.height / 3 : player.y,
-    width: player.width,
-    height: isCrouch ? player.height / 3 : player.height
-};
+            x: player.x + 12,
+            y: isCrouch ? player.y + player.height / 3 : player.y + 10,
+            width: player.width - 24,
+            height: isCrouch ? player.height / 3 : player.height - 18
+        };
 
-if(onCollision(playerObj, box)) {
+        if(onCollision(playerObj, box)) {
             hit = true;
             hitSound.currentTime = 0;
             hitSound.volume = 0.1;
-            hitSound.play();
+            hitSound.play().catch(() => {});
             lives--;
 
             boxesArray.splice(i,1); 
@@ -177,46 +181,35 @@ if(onCollision(playerObj, box)) {
             }
         }
 
-        if(!onCollision(player, box)) {
-    hit = false;
-}
-
-
-        if(time >= 60) {
-    victory = true;
-    gameOver = true;
-}
-
-            if(gameOver) {
-            context.font = "normal bold 70px blocky, cursive";
-            context.textAlign = "center";
-            
-            context.font = "normal bold 30px blocky, cursive";
-            context.fillStyle = "black";
-            context.fillText("Score : "+ (score), board.width/2, 320);
-            context.font = "normal bold 30px blocky, cursive";
-            context.fillStyle = "black";
-            context.fillText("Lives : " + lives, board.width/2, 360);
-            if(victory) {
-                context.fillStyle = "lime";
-    context.font = "normal bold 70px blocky, cursive";
-    context.fillText("Victory!", board.width/2, board.height/2);
-} else {
-    context.fillStyle = "red";
-    context.font = "normal bold 70px blocky, cursive";
-    context.fillText("Game Over!", board.width/2, board.height/2);
-    
-}
-            let gameOverPlayed = false;
-            if(gameOver && !gameOverPlayed){
-                 gameOverSound.currentTime = 0;
-                 gameOverSound.volume = 1;
-                  gameOverSound.play();
-                  gameOverPlayed = true;
-                }
-            return;
+        if(box.x + box.width < 0) {
+            boxesArray.splice(i, 1);
         }
-        
+    }
+
+    if(time >= 60) {
+        victory = true;
+        gameOver = true;
+    }
+
+    if(gameOver) {
+        context.fillStyle = "rgba(255, 250, 240, 0.88)";
+        context.fillRect(0, 0, board.width, board.height);
+        context.textAlign = "center";
+        context.font = "600 30px Fredoka, sans-serif";
+        context.fillStyle = "#17324d";
+        context.fillText("Score : " + score.toFixed(0), board.width / 2, 320);
+        context.fillText("Lives : " + lives, board.width / 2, 360);
+        context.fillStyle = victory ? "#087e8b" : "#b94a47";
+        context.font = "700 70px Fredoka, sans-serif";
+        context.fillText(victory ? "Victory!" : "Game Over!", board.width / 2, board.height / 2);
+
+        if(!gameOverPlayed) {
+            gameOverSound.currentTime = 0;
+            gameOverSound.volume = 1;
+            gameOverSound.play().catch(() => {});
+            gameOverPlayed = true;
+        }
+        return;
 }
 score+= 0.5;
 context.font = "normal bold 20px monospace";
@@ -244,9 +237,31 @@ function movePlayer(e) {
     if(gameOver) {
         return;
     }
-    if(e.code == "Space" && player.y == playery) {
-        velocityY = -10;
+    if(e.code == "Space" && player.y >= boardHeight - player.height) {
+        jump();
     }
+}
+
+function jump() {
+    if(gameOver || player.y < boardHeight - player.height) {
+        return;
+    }
+    velocityY = -10;
+    jumpSound.currentTime = 0;
+    jumpSound.volume = 0.1;
+    jumpSound.play().catch(() => {});
+}
+
+function startCrouch(event) {
+    event.preventDefault();
+    if(!gameOver) {
+        isCrouch = true;
+    }
+}
+
+function stopCrouch(event) {
+    event.preventDefault();
+    isCrouch = false;
 }
 
 function createBox() {
@@ -278,9 +293,6 @@ function createBox() {
     }
     boxesArray.push(box);
 
-    if(boxesArray.length > 5) {
-        boxesArray.shift();
-    }
 }
 
 function onCollision(obj1,obj2) {

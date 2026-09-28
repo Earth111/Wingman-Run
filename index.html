@@ -9,14 +9,25 @@
 </head>
 <body>
     <h1>Wingman Run In The Beach</h1>
-    
-    
+
+    <p class="controls-help">Space / Jump = กระโดด | Arrow Down / Crouch = ก้มหลบ</p>
+
+    <p class="music-credit" aria-label="เพลงที่กำลังเล่น">
+        <span>Music By</span>
+        <strong>Malcolm Todd - Earrings</strong>
+    </p>
 
     <canvas id="board"></canvas>
     <br>
-    <button onclick="restartGame()">Restart Game</button>
-    
-     
+    <div class="game-controls" aria-label="Game controls">
+        <button id="jump-button" type="button">Jump</button>
+        <button id="crouch-button" type="button">Crouch</button>
+        <button type="button" onclick="restartGame()">Restart Game</button>
+    </div>
+
+    <footer>
+        <h2>จัดทำโดย นายสุทธิกมล เนียมเผือก</h2>
+    </footer>
 
 <script src="script.js"></script>
 </body>
